@@ -3,7 +3,8 @@
   "author": "Amal Raj S R",
   "license":"MIT",
   "version": "1.0.0",
-  "description": "Scaffold a React app with Vite, Router, ESLint, and an opinionated folder structure via CLI.",
+  "homepage": "https://github.com/amalrajsr/react-scaffold-setup/blob/master/README.md",
+  "description": "Quickly scaffold a React app with Vite, React Router, ESLint, and a ready-to-use folder structure — all via a simple CLI",
   "bin": {
     "create-react-scaffold": "./bin/cli.js"
   },
