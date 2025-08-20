@@ -91,7 +91,10 @@ export async function scaffoldProject(options) {
 
   // 4) React Router (Data Router API)
   log("Adding React Router...");
-  run(addDepsCmd(pm, ["react-router-dom"]), projectPath);
+  // Use RRD v6 for React 17 compatibility; latest for React 18+
+  const isModernForRouter = !reactVersion || getReactMajor(reactVersion) >= 18;
+  const routerPkg = isModernForRouter ? "react-router-dom" : "react-router-dom@^6";
+  run(addDepsCmd(pm, [routerPkg]), projectPath);
 
   // 5) ESLint deps (JSON config, not flat)
   log("Adding ESLint...");
