@@ -1,6 +1,9 @@
 {
-  "name": "create-my-react",
+  "name": "react-scaffold-setup",
+  "author": "Amal Raj S R",
+  "license":"MIT",
   "version": "1.0.0",
+  "description": "Scaffold a React app with Vite, Router, ESLint, and an opinionated folder structure via CLI.",
   "bin": {
     "create-react-scaffold": "./bin/cli.js"
   },
@@ -13,6 +16,10 @@
     "commander": "^14.0.0",
     "inquirer": "^12.9.3"
   },
+  "files": [
+    "bin",
+    "src"
+  ],
   "keywords": [
     "react",
     "setup",
