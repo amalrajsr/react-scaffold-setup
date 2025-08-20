@@ -3,8 +3,10 @@ import { program } from "commander";
 import chalk from "chalk";
 import { askProjectOptions } from "./prompts.js";
 import { scaffoldProject } from "./scaffold.js";
+import { createFeatures } from "./feature.js";
 
 async function run() {
+  // Root command (project creation)
   program
     .name("create-react-scaffold")
     .description("Create a React project with an opinionated scaffold (Vite + Router + ESLint)")
@@ -14,38 +16,53 @@ async function run() {
     .option("--react-version <version>", "React version to install, e.g. 18, 18.2.0")
     .option("--pm <pm>", "Package manager: npm | pnpm | yarn")
     .option("-y, --yes", "Accept defaults and skip prompts")
-    .parse(process.argv);
+    .action(async (argProjectName, opts) => {
+      const yes = Boolean(opts.yes);
+      let options = { projectName: opts.name || argProjectName, language: opts.language };
+      try {
+        if (!yes && (!options.projectName || !options.language || !opts.pm)) {
+          const answers = await askProjectOptions({ projectName: options.projectName, language: options.language });
+          options = { ...options, ...answers };
+        } else {
+          options.projectName = options.projectName || "my-app";
+          const lang = (options.language || "TypeScript").toLowerCase();
+          options.language = ["typescript", "ts"].includes(lang) ? "TypeScript" : "JavaScript";
+        }
 
-  const parsed = program.opts();
-  const argProject = program.args?.[0];
-  const projectName = parsed.name || argProject;
-  const language = parsed.language;
-  const yes = Boolean(parsed.yes);
+        if (opts.reactVersion) options.reactVersion = opts.reactVersion;
+        if (opts.pm) options.pm = opts.pm; // npm|pnpm|yarn
 
-  let options = { projectName, language };
+        await scaffoldProject(options);
+      } catch (err) {
+        const msg = err && typeof err.message === "string" ? err.message : String(err);
+        console.error("\n" + chalk.red("Error:"), msg);
+        process.exitCode = 1;
+      }
+    });
 
-  try {
-    // If not in non-interactive mode, or any required value missing, prompt
-    if (!yes && (!options.projectName || !options.language || !parsed.pm)) {
-      const answers = await askProjectOptions({ projectName: options.projectName, language: options.language });
-      options = { ...options, ...answers };
-    } else {
-      // Fill defaults when skipping prompts
-      options.projectName = options.projectName || "my-app";
-      const lang = (options.language || "TypeScript").toLowerCase();
-      options.language = ["typescript", "ts"].includes(lang) ? "TypeScript" : "JavaScript";
-    }
+  // Subcommand: feature scaffolding
+  program
+    .command("feature [names...]")
+    .description("Create one or more feature folders under src/features")
+    .option("-f, --force", "Overwrite existing files/folders", false)
+    .option("--dry-run", "Preview without writing files", false)
+    .action(async (names = [], cmd) => {
+      try {
+        if (!names.length) throw new Error("Provide at least one feature name");
+        const { isTS, results } = await createFeatures(names, { force: cmd.force, dryRun: cmd.dryRun });
+        console.log(`\nLanguage detected: ${isTS ? "TypeScript" : "JavaScript"}`);
+        results.forEach((r) => {
+          if (r.skipped) console.log(`- Skipped ${r.name} (exists)`);
+          else console.log(`- Created ${r.name}`);
+        });
+      } catch (err) {
+        const msg = err && typeof err.message === "string" ? err.message : String(err);
+        console.error("\n" + chalk.red("Error:"), msg);
+        process.exitCode = 1;
+      }
+    });
 
-    // Pass-through extra options
-  if (parsed.reactVersion) options.reactVersion = parsed.reactVersion;
-  if (parsed.pm) options.pm = parsed.pm; // npm|pnpm|yarn (optional override)
-
-    await scaffoldProject(options);
-  } catch (err) {
-    const msg = err && typeof err.message === "string" ? err.message : String(err);
-    console.error("\n" + chalk.red("Error:"), msg);
-    process.exitCode = 1;
-  }
+  program.parse(process.argv);
 }
 
 run();
