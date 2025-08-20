@@ -30,7 +30,15 @@ export function appendFile(p, content) {
 
 export function ensureGitignore(projectPath) {
   const gi = path.join(projectPath, ".gitignore");
-  const required = ["node_modules", "dist", ".env", ".DS_Store"];
+  const required = [
+    "node_modules",
+    "dist",
+    ".env",
+    ".DS_Store",
+    "Thumbs.db",
+    "*.log",
+    "coverage",
+  ];
   let existing = "";
   if (fs.existsSync(gi)) existing = fs.readFileSync(gi, "utf8");
   const lines = new Set(existing.split("\n").filter(Boolean));

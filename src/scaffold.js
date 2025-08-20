@@ -16,6 +16,7 @@ import {
   writeTSConfigs,
   fixMainEntry,
   addLintScripts,
+  removeViteSamples,
 } from "./scaffold/helpers.js";
 
 /**
@@ -26,11 +27,15 @@ import {
  * @param {string} [options.reactVersion] - optional. If omitted => latest (treated as 18+)
  */
 export async function scaffoldProject(options) {
-  const projectName = options.projectName;
+  if (!options || typeof options.projectName !== "string" || !options.projectName.trim()) {
+    throw new Error("Project name is required");
+  }
+  const projectName = options.projectName.trim();
   const langInput = (options.language || "TypeScript").toLowerCase();
   const isTS = langInput === "typescript" || langInput === "ts";
   const template = isTS ? "react-ts" : "react";
   const projectPath = path.join(process.cwd(), projectName);
+  const pm = normalizePM(options.pm);
 
   // Guard: don't scaffold into a non-empty existing directory
   if (fs.existsSync(projectPath)) {
@@ -59,23 +64,26 @@ export async function scaffoldProject(options) {
   // 1) Create Vite app
   log(`Creating Vite project (${template})...`);
   // Quote project name to support spaces and special characters
-  run(`npm create vite@latest "${projectName}" -- --template ${template}`, process.cwd());
+  run(`${pmCreate(pm)} vite@latest "${escapeQuotes(projectName)}" -- --template ${template}`, process.cwd());
 
-  // 2) Install base deps (node_modules + package-lock.json)
+  // 2) Install base deps (node_modules + lockfile)
   log("Installing dependencies...");
-  run("npm install", projectPath);
+  run(installCmd(pm), projectPath);
 
   // 3) If a specific React version was requested, install it explicitly
   if (reactVersion) {
     log(`Installing React ${reactVersion}...`);
     try {
-      run(`npm install react@${reactVersion} react-dom@${reactVersion}`, projectPath);
+      run(addDepsCmd(pm, [
+        `react@${reactVersion}`,
+        `react-dom@${reactVersion}`,
+      ]), projectPath);
     } catch (e) {
       log(
         `Provided --react-version "${reactVersion}" is not valid or failed to install. Falling back to latest React.`
       );
       // Install latest stable React
-      run(`npm install react react-dom`, projectPath);
+      run(addDepsCmd(pm, ["react", "react-dom"]), projectPath);
       // clear reactVersion to indicate we used latest
       reactVersion = undefined;
     }
@@ -83,14 +91,14 @@ export async function scaffoldProject(options) {
 
   // 4) React Router (Data Router API)
   log("Adding React Router...");
-  run("npm install react-router-dom", projectPath);
+  run(addDepsCmd(pm, ["react-router-dom"]), projectPath);
 
   // 5) ESLint deps (JSON config, not flat)
   log("Adding ESLint...");
   const eslintBase = ["eslint", "eslint-plugin-react", "eslint-plugin-react-hooks"];
   const eslintTS = ["@typescript-eslint/parser", "@typescript-eslint/eslint-plugin"];
   run(
-    `npm install -D ${[...eslintBase, ...(isTS ? eslintTS : [])].join(" ")}`,
+    addDevDepsCmd(pm, [...eslintBase, ...(isTS ? eslintTS : [])]),
     projectPath
   );
 
@@ -127,12 +135,63 @@ export async function scaffoldProject(options) {
   ensureGitignore(projectPath);
 
   // 14) main entry
-  fixMainEntry(projectPath, isTS);
+  fixMainEntry(projectPath, isTS, isModernReact);
+
+  // 14.1) remove Vite sample artifacts
+  removeViteSamples(projectPath);
 
   // 15) npm scripts
   addLintScripts(projectPath);
   
   // Done
   log("Done! ✅");
-  console.log(`\nNext steps:\n  cd ${projectName}\n  npm run dev\n`);
+  const cdCmd = `cd "${projectName}"`;
+  const devCmd = pm === "yarn" ? "yarn dev" : pm === "pnpm" ? "pnpm dev" : "npm run dev";
+  console.log(`\nNext steps:\n  ${cdCmd}\n  ${devCmd}\n`);
+}
+
+function normalizePM(input) {
+  const pm = String(input || "").toLowerCase();
+  if (pm === "pnpm" || pm === "yarn" || pm === "npm") return pm;
+  const ua = process.env.npm_config_user_agent || "";
+  if (ua.includes("pnpm")) return "pnpm";
+  if (ua.includes("yarn")) return "yarn";
+  return "npm";
+}
+
+function pmCreate(pm) {
+  if (pm === "pnpm") return "pnpm dlx";
+  if (pm === "yarn") return "yarn create";
+  return "npm create";
+}
+
+function installCmd(pm) {
+  if (pm === "pnpm") return "pnpm install";
+  if (pm === "yarn") return "yarn";
+  return "npm install";
+}
+
+function addDepsCmd(pm, pkgs) {
+  const list = pkgs.join(" ");
+  if (pm === "pnpm") return `pnpm add ${list}`;
+  if (pm === "yarn") return `yarn add ${list}`;
+  return `npm install ${list}`;
+}
+
+function addDevDepsCmd(pm, pkgs) {
+  const list = pkgs.join(" ");
+  if (pm === "pnpm") return `pnpm add -D ${list}`;
+  if (pm === "yarn") return `yarn add -D ${list}`;
+  return `npm install -D ${list}`;
+}
+
+function escapeQuotes(input) {
+  return String(input).replaceAll('"', '\\"');
+}
+
+function removeDepsCmd(pm, pkgs) {
+  const list = pkgs.join(" ");
+  if (pm === "pnpm") return `pnpm remove ${list}`;
+  if (pm === "yarn") return `yarn remove ${list}`;
+  return `npm uninstall ${list}`;
 }

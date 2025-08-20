@@ -1,15 +1,16 @@
 {
   "name": "create-my-react",
   "version": "1.0.0",
-  "main": "index.js",
   "bin": {
     "create-react-scaffold": "./bin/cli.js"
   },
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "chalk": "^5.6.0",
     "commander": "^14.0.0",
-    "degit": "^2.8.4",
     "inquirer": "^12.9.3"
   }
 }

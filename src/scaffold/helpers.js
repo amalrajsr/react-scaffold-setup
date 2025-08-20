@@ -298,13 +298,17 @@ api.interceptors.response.use((r) => r, (e) => Promise.reject(e));
 
 export function ensureIndexCss(projectPath) {
   const indexCssPath = path.join(projectPath, "src/index.css");
-  if (!fs.existsSync(indexCssPath)) writeFile(indexCssPath, `/* global styles */`);
+  if (!fs.existsSync(indexCssPath)) {
+    writeFile(indexCssPath, `/* global styles */`);
+  }
 }
 
 export function ensureGlobalTypes(projectPath, isTS) {
   if (!isTS) return;
   const globalType = path.join(projectPath, "src/type.ts");
-  if (!fs.existsSync(globalType)) writeFile(globalType, `// shared global types`);
+  if (!fs.existsSync(globalType)) {
+    writeFile(globalType, `// shared global types`);
+  }
 }
 
 export function writeEslintConfigFile(projectPath, isTS, isModernReact) {
@@ -355,6 +359,9 @@ export function writeEslintConfigFile(projectPath, isTS, isModernReact) {
     )
   );
 }
+
+// flat config writer removed; sticking to eslintrc JSON for compatibility
+// flat config writer intentionally omitted (using eslintrc JSON)
 
 export function writeEnvFiles(projectPath) {
   writeFile(path.join(projectPath, ".env"), `# environment variables\nVITE_API_URL=\n`);
@@ -461,12 +468,14 @@ export function writeTSConfigs(projectPath) {
   }
 }
 
-export function fixMainEntry(projectPath, isTS) {
+export function fixMainEntry(projectPath, isTS, isModernReact) {
   const mainPath = path.join(projectPath, `src/main.${isTS ? "tsx" : "jsx"}`);
   if (!fs.existsSync(mainPath)) return; // Vite created it
 
-  const content = isTS
-    ? `
+  let content;
+  if (isModernReact) {
+    content = isTS
+      ? `
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -478,7 +487,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   </React.StrictMode>
 );
 `.trimStart()
-    : `
+      : `
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -490,6 +499,36 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 `.trimStart();
+  } else {
+    // React 17 fallback (no createRoot)
+    content = isTS
+      ? `
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+  document.getElementById("root")!
+);
+`.trimStart()
+      : `
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+  document.getElementById("root")
+);
+`.trimStart();
+  }
 
   fs.writeFileSync(mainPath, content);
 }
@@ -506,5 +545,29 @@ export function addLintScripts(projectPath) {
     }
   } catch (_) {
     // ignore package.json script update failures
+  }
+}
+
+export function removeViteSamples(projectPath) {
+  const files = [
+    path.join(projectPath, "src/App.css"),
+    path.join(projectPath, "src/assets/react.svg"),
+    path.join(projectPath, "public/vite.svg"),
+  ];
+  for (const p of files) {
+    try {
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    } catch (_) {
+      // ignore
+    }
+  }
+  // remove empty assets dir
+  const assetsDir = path.join(projectPath, "src/assets");
+  try {
+    if (fs.existsSync(assetsDir) && fs.readdirSync(assetsDir).length === 0) {
+      fs.rmdirSync(assetsDir);
+    }
+  } catch (_) {
+    // ignore
   }
 }
