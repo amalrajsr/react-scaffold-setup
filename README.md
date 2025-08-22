@@ -12,7 +12,7 @@ Scaffold a modern React app with Vite, React Router, ESLint, and an opinionated 
 - Post-setup command to generate feature folders
 
 ## Requirements
-- Node.js >= 18
+- Node.js >= 20
 - npm, pnpm, or yarn (detected automatically; can be overridden)
 
 ## Quickstart
