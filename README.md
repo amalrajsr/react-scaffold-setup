@@ -1,6 +1,6 @@
 # create-my-react
 
-Scaffold a modern React app with Vite, React Router, ESLint, and an opinionated folder structure from a single CLI. Includes a post-setup command to generate feature modules on demand.
+Scaffold a modern React app with Vite, React Router, ESLint, and an opinionated folder structure from a single CLI. Includes a post-setup command to generate feature modules on demand, plus optional integrations you can add at any time.
 
 ## Features
 - Vite + React (TypeScript or JavaScript)
@@ -10,6 +10,7 @@ Scaffold a modern React app with Vite, React Router, ESLint, and an opinionated 
 - Environment files: `.env`, `.env.sample`
 - Docs: `SETUP.md` and a project `README` entry
 - Post-setup command to generate feature folders
+- Optional integrations via `add`: Tailwind CSS, React Query, Zustand, Axios
 
 ## Requirements
 - Node.js >= 20
@@ -39,6 +40,16 @@ After scaffold:
 ```sh
 cd "my-app"
 npm run dev   # or pnpm dev / yarn dev
+```
+
+Add integrations (optional):
+
+```sh
+# Add Tailwind + Zustand + Axios + React Query
+npx create-react-scaffold add tailwind zustand axios react-query
+
+# Or add a subset at any time
+npx create-react-scaffold add tailwind react-query
 ```
 
 ## What gets created
@@ -132,9 +143,39 @@ npx create-react-scaffold feature chat -f
 npx create-react-scaffold feature chat --dry-run
 ```
 
+### Add integrations (post-setup)
+Run from inside an existing project (where `src` exists):
+
+```
+create-react-scaffold add [integrations...]
+```
+Supported integrations:
+- `tailwind` — Tailwind CSS
+- `react-query` (aliases: `reactquery`, `tanstack`) — @tanstack/react-query
+- `zustand` — Zustand state library
+- `axios` — Axios HTTP client
+
+Behavior:
+- You can provide multiple integrations in one command; they’ll be applied in a safe, idempotent way.
+- The CLI auto-detects your package manager (npm/pnpm/yarn) and your React major version when needed.
+- Tailwind v4 uses the official Vite plugin and `@import "tailwindcss";` in `src/index.css` (overwrites existing styles).
+- For older projects on Tailwind v3, falls back to PostCSS config and the `@tailwind base/components/utilities` directives.
+
+Examples:
+```sh
+# Everything at once
+npx create-react-scaffold add tailwind zustand axios react-query
+
+# Just Tailwind
+npx create-react-scaffold add tailwind
+
+# React 17 projects are supported; React Query v4 will be used automatically.
+```
+
 ## Troubleshooting
 - If npm prints peer/deprecation warnings during ESLint install, the scaffold still completes and ESLint runs. You can update tooling later as versions evolve; this CLI favors compatibility with fresh Vite templates.
 - On Windows, keep quotes around paths or names with spaces: `cd "My App"`.
+- Tailwind v4: If you previously added a PostCSS config with `tailwindcss` listed as a plugin, remove it when using the Vite plugin flow; the integration writes `@import "tailwindcss";` into `src/index.css` and updates `vite.config.*` to include `@tailwindcss/vite`.
 
 ## Contributing
 Issues and PRs welcome. Please open an issue to discuss substantial changes first.
