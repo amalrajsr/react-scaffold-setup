@@ -1,4 +1,4 @@
-# create-my-react
+# react-scaffold-setup
 
 Scaffold a modern React app with Vite, React Router, ESLint, and an opinionated folder structure from a single CLI. Includes a post-setup command to generate feature modules on demand, plus optional integrations you can add at any time.
 
@@ -17,22 +17,29 @@ Scaffold a modern React app with Vite, React Router, ESLint, and an opinionated 
 - npm, pnpm, or yarn (detected automatically; can be overridden)
 
 ## Quickstart
-Create a new project interactively:
+Create a new project interactively (no install required):
 
 ```sh
-npx create-react-scaffold
+npx react-scaffold-setup
+```
+
+Prefer a global install? Then the CLI is available as `create-react-scaffold`:
+
+```sh
+npm i -g react-scaffold-setup
+create-react-scaffold
 ```
 
 Non-interactive, TypeScript with npm:
 
 ```sh
-npx create-react-scaffold my-app -l TypeScript --pm npm -y
+npx react-scaffold-setup my-app -l TypeScript --pm npm -y
 ```
 
 JavaScript with pnpm:
 
 ```sh
-npx create-react-scaffold my-app -l js --pm pnpm -y
+npx react-scaffold-setup my-app -l js --pm pnpm -y
 ```
 
 After scaffold:
@@ -46,10 +53,10 @@ Add integrations (optional):
 
 ```sh
 # Add Tailwind + Zustand + Axios + React Query
-npx create-react-scaffold add tailwind zustand axios react-query
+npx react-scaffold-setup add tailwind zustand axios react-query
 
 # Or add a subset at any time
-npx create-react-scaffold add tailwind react-query
+npx react-scaffold-setup add tailwind react-query
 ```
 
 ## What gets created
@@ -79,14 +86,14 @@ src/
 ```
 
 - Router is configured in `src/routes/index.(tsx|jsx)` and rendered from `App`.
-- ESLint config is written as `.eslintrc.json`.
+- ESLint uses the flat config (`eslint.config.js`) provided by the Vite template.
 - `.env` and `.env.sample` are created.
 
 ## CLI reference
 
 ### Project creation (root command)
 ```
-create-react-scaffold [projectName] [options]
+npx react-scaffold-setup [projectName] [options]
 ```
 Options:
 - `-n, --name <name>`: Project directory name (alias of positional)
@@ -98,13 +105,13 @@ Options:
 Examples:
 ```sh
 # Interactive
-npx create-react-scaffold
+npx react-scaffold-setup
 
 # Non-interactive TS with yarn
-npx create-react-scaffold my-app -l ts --pm yarn -y
+npx react-scaffold-setup my-app -l ts --pm yarn -y
 
 # Request a specific React version
-npx create-react-scaffold my-app --react-version 18.2.0 -l ts -y
+npx react-scaffold-setup my-app --react-version 18.2.0 -l ts -y
 ```
 
 Notes:
@@ -115,7 +122,7 @@ Notes:
 Run from inside an existing project (where `src` exists):
 
 ```
-create-react-scaffold feature <names...> [options]
+npx react-scaffold-setup feature <names...> [options]
 ```
 Options:
 - `-f, --force`: Overwrite existing files/folders
@@ -134,20 +141,20 @@ Behavior:
 Examples:
 ```sh
 # Create two features
-npx create-react-scaffold feature chat blog
+npx react-scaffold-setup feature chat blog
 
 # Overwrite existing
-npx create-react-scaffold feature chat -f
+npx react-scaffold-setup feature chat -f
 
 # Dry run
-npx create-react-scaffold feature chat --dry-run
+npx react-scaffold-setup feature chat --dry-run
 ```
 
 ### Add integrations (post-setup)
 Run from inside an existing project (where `src` exists):
 
 ```
-create-react-scaffold add [integrations...]
+npx react-scaffold-setup add [integrations...]
 ```
 Supported integrations:
 - `tailwind` — Tailwind CSS
@@ -164,10 +171,10 @@ Behavior:
 Examples:
 ```sh
 # Everything at once
-npx create-react-scaffold add tailwind zustand axios react-query
+npx react-scaffold-setup add tailwind zustand axios react-query
 
 # Just Tailwind
-npx create-react-scaffold add tailwind
+npx react-scaffold-setup add tailwind
 
 # React 17 projects are supported; React Query v4 will be used automatically.
 ```

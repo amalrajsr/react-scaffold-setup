@@ -36,7 +36,7 @@ export async function askProjectOptions(initial = {}) {
         { name: "pnpm", value: "pnpm" },
         { name: "yarn", value: "yarn" },
       ],
-      default: detectDefaultPM(),
+      default: initial.pm || detectDefaultPM(),
     },
   ]);
 
