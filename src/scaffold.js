@@ -10,12 +10,10 @@ import {
   scaffoldHooksAndLib,
   ensureIndexCss,
   ensureGlobalTypes,
-  writeEslintConfigFile,
   writeEnvFiles,
   writeDocsFiles,
   writeTSConfigs,
   fixMainEntry,
-  addLintScripts,
   removeViteSamples,
 } from "./scaffold/helpers.js";
 
@@ -64,7 +62,7 @@ export async function scaffoldProject(options) {
   // 1) Create Vite app
   log(`Creating Vite project (${template})...`);
   // Quote project name to support spaces and special characters
-  run(`${pmCreate(pm)} vite@latest "${escapeQuotes(projectName)}" -- --template ${template}`, process.cwd());
+  run(`${pmCreate(pm)} vite@latest "${escapeQuotes(projectName)}" -- --template ${template} --no-interactive`, process.cwd());
 
   // 2) Install base deps (node_modules + lockfile)
   log("Installing dependencies...");
@@ -96,20 +94,9 @@ export async function scaffoldProject(options) {
   const routerPkg = isModernForRouter ? "react-router-dom" : "react-router-dom@^6";
   run(addDepsCmd(pm, [routerPkg]), projectPath);
 
-  // 5) ESLint deps (JSON config, not flat)
-  log("Adding ESLint...");
-  const eslintBase = ["eslint", "eslint-plugin-react", "eslint-plugin-react-hooks"];
-  const eslintTS = ["@typescript-eslint/parser", "@typescript-eslint/eslint-plugin"];
-  run(
-    addDevDepsCmd(pm, [...eslintBase, ...(isTS ? eslintTS : [])]),
-    projectPath
-  );
-
-  // 6) Create required folders (exact structure)
   log("Creating folder structure...");
   createFolderStructure(projectPath);
-  
-  // 7) Files: App, Router, Layouts, Example feature, Lib, Hooks, Types
+
   log("Scaffolding app shell, router and example feature...");
   const ext = isTS ? "tsx" : "jsx";
   scaffoldAppShell(projectPath, isTS, ext);
@@ -117,35 +104,18 @@ export async function scaffoldProject(options) {
   scaffoldFeatureExample(projectPath, isTS, ext);
   scaffoldHooksAndLib(projectPath, isTS);
 
-  // 8) index.css & global types (TS)
   ensureIndexCss(projectPath);
   ensureGlobalTypes(projectPath, isTS);
 
-  // 9) ESLint config (.eslintrc.json) based on effective React version
   const isModernReact = !reactVersion || getReactMajor(reactVersion) >= 18;
-  writeEslintConfigFile(projectPath, isTS, isModernReact);
 
-  // 10) .env & .env.sample
   writeEnvFiles(projectPath);
-
-  // 11) SETUP.md & README.md
-  writeDocsFiles(projectPath, isTS, ext, projectName, isModernReact);
-
-  // 12) TS configs
+  writeDocsFiles(projectPath, isTS, ext, projectName);
   if (isTS) writeTSConfigs(projectPath);
-
-  // 13) .gitignore
   ensureGitignore(projectPath);
-
-  // 14) main entry
   fixMainEntry(projectPath, isTS, isModernReact);
-
-  // 14.1) remove Vite sample artifacts
   removeViteSamples(projectPath);
 
-  // 15) npm scripts
-  addLintScripts(projectPath);
-  
   // Done
   log("Done! ✅");
   const cdCmd = `cd "${projectName}"`;
@@ -163,7 +133,7 @@ function normalizePM(input) {
 }
 
 function pmCreate(pm) {
-  if (pm === "pnpm") return "pnpm dlx";
+  if (pm === "pnpm") return "pnpm create";
   if (pm === "yarn") return "yarn create";
   return "npm create";
 }
@@ -181,20 +151,6 @@ function addDepsCmd(pm, pkgs) {
   return `npm install ${list}`;
 }
 
-function addDevDepsCmd(pm, pkgs) {
-  const list = pkgs.join(" ");
-  if (pm === "pnpm") return `pnpm add -D ${list}`;
-  if (pm === "yarn") return `yarn add -D ${list}`;
-  return `npm install -D ${list}`;
-}
-
 function escapeQuotes(input) {
   return String(input).replaceAll('"', '\\"');
-}
-
-function removeDepsCmd(pm, pkgs) {
-  const list = pkgs.join(" ");
-  if (pm === "pnpm") return `pnpm remove ${list}`;
-  if (pm === "yarn") return `yarn remove ${list}`;
-  return `npm uninstall ${list}`;
 }

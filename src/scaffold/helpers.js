@@ -311,64 +311,12 @@ export function ensureGlobalTypes(projectPath, isTS) {
   }
 }
 
-export function writeEslintConfigFile(projectPath, isTS, isModernReact) {
-  writeFile(
-    path.join(projectPath, ".eslintrc.json"),
-    JSON.stringify(
-      isTS
-        ? {
-            env: { browser: true, es2021: true },
-            extends: [
-              "eslint:recommended",
-              "plugin:react/recommended",
-              "plugin:react-hooks/recommended",
-              "plugin:@typescript-eslint/recommended",
-            ],
-            parser: "@typescript-eslint/parser",
-            parserOptions: {
-              ecmaFeatures: { jsx: true },
-              ecmaVersion: "latest",
-              sourceType: "module",
-            },
-            plugins: ["react", "react-hooks", "@typescript-eslint"],
-            rules: {
-              "react/react-in-jsx-scope": isModernReact ? "off" : "error",
-            },
-            settings: { react: { version: "detect" } },
-          }
-        : {
-            env: { browser: true, es2021: true },
-            extends: [
-              "eslint:recommended",
-              "plugin:react/recommended",
-              "plugin:react-hooks/recommended",
-            ],
-            parserOptions: {
-              ecmaFeatures: { jsx: true },
-              ecmaVersion: "latest",
-              sourceType: "module",
-            },
-            plugins: ["react", "react-hooks"],
-            rules: {
-              "react/react-in-jsx-scope": isModernReact ? "off" : "error",
-            },
-            settings: { react: { version: "detect" } },
-          },
-      null,
-      2
-    )
-  );
-}
-
-// flat config writer removed; sticking to eslintrc JSON for compatibility
-// flat config writer intentionally omitted (using eslintrc JSON)
-
 export function writeEnvFiles(projectPath) {
   writeFile(path.join(projectPath, ".env"), `# environment variables\nVITE_API_URL=\n`);
   writeFile(path.join(projectPath, ".env.sample"), `VITE_API_URL=https://api.example.com`);
 }
 
-export function writeDocsFiles(projectPath, isTS, ext, projectName, isModernReact) {
+export function writeDocsFiles(projectPath, isTS, ext, projectName) {
   writeFile(
     path.join(projectPath, "SETUP.md"),
     `
@@ -409,7 +357,7 @@ ${isTS ? "- type.ts        → global TS types" : ""}
 - React + Vite
 - ${isTS ? "TypeScript" : "JavaScript"}
 - React Router (Data Router API)
-- ESLint (.eslintrc.json; JSX scope rule ${isModernReact ? "off for React 18+" : "enforced for <18"})
+- ESLint (Vite's flat config; \`eslint.config.js\`)
 - Opinionated folder structure
 `.trimStart()
   );
@@ -531,21 +479,6 @@ ReactDOM.render(
   }
 
   fs.writeFileSync(mainPath, content);
-}
-
-export function addLintScripts(projectPath) {
-  try {
-    const pkgPath = path.join(projectPath, "package.json");
-    if (fs.existsSync(pkgPath)) {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-      pkg.scripts = pkg.scripts || {};
-      if (!pkg.scripts.lint) pkg.scripts.lint = "eslint .";
-      if (!pkg.scripts["lint:fix"]) pkg.scripts["lint:fix"] = "eslint . --fix";
-      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-    }
-  } catch (_) {
-    // ignore package.json script update failures
-  }
 }
 
 export function removeViteSamples(projectPath) {

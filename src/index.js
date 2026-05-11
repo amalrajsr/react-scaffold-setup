@@ -18,20 +18,25 @@ async function run() {
     .option("--pm <pm>", "Package manager: npm | pnpm | yarn")
     .option("-y, --yes", "Accept defaults and skip prompts")
     .action(async (argProjectName, opts) => {
-      const yes = Boolean(opts.yes);
-      let options = { projectName: opts.name || argProjectName, language: opts.language };
       try {
-        if (!yes && (!options.projectName || !options.language || !opts.pm)) {
-          const answers = await askProjectOptions({ projectName: options.projectName, language: options.language });
+        let options = {
+          projectName: opts.name || argProjectName,
+          language: opts.language,
+          pm: opts.pm,
+          reactVersion: opts.reactVersion,
+        };
+
+        const yes = Boolean(opts.yes);
+        if (!yes && (!options.projectName || !options.language || !options.pm)) {
+          const answers = await askProjectOptions(options);
           options = { ...options, ...answers };
         } else {
           options.projectName = options.projectName || "my-app";
-          const lang = (options.language || "TypeScript").toLowerCase();
-          options.language = ["typescript", "ts"].includes(lang) ? "TypeScript" : "JavaScript";
+          options.language = options.language || "TypeScript";
+          options.pm = options.pm || "npm";
         }
 
-        if (opts.reactVersion) options.reactVersion = opts.reactVersion;
-        if (opts.pm) options.pm = opts.pm; // npm|pnpm|yarn
+        options.language = normalizeLanguage(options.language);
 
         await scaffoldProject(options);
       } catch (err) {
@@ -83,6 +88,11 @@ async function run() {
     });
 
   program.parse(process.argv);
+}
+
+function normalizeLanguage(input) {
+  const lang = String(input || "TypeScript").toLowerCase();
+  return ["typescript", "ts"].includes(lang) ? "TypeScript" : "JavaScript";
 }
 
 run();
